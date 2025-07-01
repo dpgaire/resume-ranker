@@ -1,15 +1,18 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useMutation } from "@tanstack/react-query";
-import { Bot, Briefcase, Sparkles, ArrowRight, Download, RotateCcw, Sun, Moon } from "lucide-react";
+import { Bot, Briefcase, Sparkles, ArrowRight, Download, RotateCcw, Sun, Moon, Settings, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { FileUpload } from "@/components/file-upload";
 import { MatchScoreDisplay } from "@/components/match-score-display";
 import { AnalysisSummary } from "@/components/analysis-summary";
+import { SettingsModal } from "@/components/settings-modal";
+import { HistoryModal } from "@/components/history-modal";
 import { useTheme } from "@/components/theme-provider";
 import { apiRequest } from "@/lib/queryClient";
+import type { ApiSettings, MatchAnalysis } from "@shared/schema";
 
 interface MatchResult {
   id: number;
@@ -32,6 +35,17 @@ export default function Home() {
   const [extractedText, setExtractedText] = useState("");
   const [matchResult, setMatchResult] = useState<MatchResult | null>(null);
   const [showResults, setShowResults] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [apiSettings, setApiSettings] = useState<ApiSettings>(() => {
+    const saved = localStorage.getItem('ai-resume-matcher-settings');
+    return saved ? JSON.parse(saved) : {
+      preferredProvider: 'openrouter' as const,
+      openaiKey: '',
+      openrouterKey: '',
+      claudeKey: '',
+    };
+  });
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
 
@@ -63,7 +77,13 @@ export default function Home() {
   // Match analysis mutation
   const matchMutation = useMutation({
     mutationFn: async ({ jobDescription, resumeText }: { jobDescription: string; resumeText: string }) => {
-      const response = await apiRequest('POST', '/api/match', { jobDescription, resumeText });
+      // Include API settings if any keys are configured
+      const hasApiKeys = apiSettings.openaiKey || apiSettings.openrouterKey || apiSettings.claudeKey;
+      const payload = hasApiKeys 
+        ? { jobDescription, resumeText, apiSettings }
+        : { jobDescription, resumeText };
+      
+      const response = await apiRequest('POST', '/api/match', payload);
       return response.json();
     },
     onSuccess: (data) => {
@@ -128,6 +148,29 @@ export default function Home() {
     setExtractedText("");
   };
 
+  const handleSaveSettings = (newSettings: ApiSettings) => {
+    setApiSettings(newSettings);
+    localStorage.setItem('ai-resume-matcher-settings', JSON.stringify(newSettings));
+  };
+
+  const handleViewHistoryAnalysis = (analysis: MatchAnalysis) => {
+    setMatchResult({
+      id: analysis.id,
+      matchScore: analysis.matchScore,
+      skillMatch: analysis.skillMatch,
+      experienceMatch: analysis.experienceMatch,
+      educationMatch: analysis.educationMatch,
+      keywordMatch: analysis.keywordMatch,
+      strengths: analysis.strengths,
+      improvements: analysis.improvements,
+      recommendations: analysis.recommendations,
+      summary: analysis.summary,
+      isAiGenerated: analysis.isAiGenerated,
+    });
+    setShowResults(true);
+    setShowHistory(false);
+  };
+
   const isProcessing = extractPdfMutation.isPending || matchMutation.isPending;
 
   return (
@@ -146,19 +189,42 @@ export default function Home() {
               </div>
             </div>
             
-            {/* Theme Toggle */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-              className="p-3 rounded-xl neumorphic hover:scale-105 transition-transform"
-            >
-              {theme === "light" ? (
-                <Moon className="w-5 h-5 text-purple-600" />
-              ) : (
-                <Sun className="w-5 h-5 text-yellow-500" />
-              )}
-            </Button>
+            {/* Action Buttons */}
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowHistory(true)}
+                className="p-3 rounded-xl neumorphic hover:scale-105 transition-transform"
+                title="View History"
+              >
+                <History className="w-5 h-5 text-blue-600" />
+              </Button>
+              
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowSettings(true)}
+                className="p-3 rounded-xl neumorphic hover:scale-105 transition-transform"
+                title="Settings"
+              >
+                <Settings className="w-5 h-5 text-gray-600" />
+              </Button>
+              
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+                className="p-3 rounded-xl neumorphic hover:scale-105 transition-transform"
+                title="Toggle Theme"
+              >
+                {theme === "light" ? (
+                  <Moon className="w-5 h-5 text-purple-600" />
+                ) : (
+                  <Sun className="w-5 h-5 text-yellow-500" />
+                )}
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -363,6 +429,20 @@ Example: We are looking for a Senior Software Engineer with experience in React,
           </p>
         </div>
       </footer>
+
+      {/* Modals */}
+      <SettingsModal
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        settings={apiSettings}
+        onSave={handleSaveSettings}
+      />
+
+      <HistoryModal
+        isOpen={showHistory}
+        onClose={() => setShowHistory(false)}
+        onViewAnalysis={handleViewHistoryAnalysis}
+      />
     </div>
   );
 }

@@ -100,8 +100,26 @@ matchAnalyses table:
 - **Connection**: PostgreSQL via DATABASE_URL environment variable
 - **Fallback**: In-memory storage for development/demo purposes
 
-## Changelog
-- July 01, 2025. Initial setup
+## Recent Updates
+
+### July 01, 2025 - Settings and History Features Added
+- **Settings Modal**: Users can now configure API keys for OpenAI, OpenRouter, and Claude
+- **History Modal**: View all previous resume analyses with detailed breakdowns
+- **Multi-Provider AI Support**: Configurable AI providers with fallback support
+- **Local Storage**: API settings are stored securely in browser localStorage
+- **Enhanced UI**: Added settings and history buttons to header with tooltips
+
+### Key New Components
+- `SettingsModal`: Secure API key configuration with masked input fields
+- `HistoryModal`: Paginated analysis history with click-to-view functionality
+- `AIProvider`: Multi-provider service supporting OpenAI, OpenRouter, and Claude APIs
+- Enhanced storage interface with `getAllMatchAnalyses()` for history retrieval
+
+### API Enhancements
+- `/api/match` endpoint now accepts optional `apiSettings` parameter
+- `/api/history` endpoint for retrieving all analysis history
+- Dynamic AI provider selection based on user preferences
+- Secure API key handling without server-side storage
 
 ## User Preferences
 

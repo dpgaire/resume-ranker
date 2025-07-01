@@ -29,6 +29,14 @@ export const matchRequestSchema = z.object({
   resumeText: z.string().min(100, "Resume text must be at least 100 characters long"),
 });
 
+export const apiSettingsSchema = z.object({
+  openaiKey: z.string().optional(),
+  openrouterKey: z.string().optional(),
+  claudeKey: z.string().optional(),
+  preferredProvider: z.enum(["openai", "openrouter", "claude"]).default("openrouter"),
+});
+
 export type InsertMatchAnalysis = z.infer<typeof insertMatchAnalysisSchema>;
 export type MatchAnalysis = typeof matchAnalyses.$inferSelect;
 export type MatchRequest = z.infer<typeof matchRequestSchema>;
+export type ApiSettings = z.infer<typeof apiSettingsSchema>;

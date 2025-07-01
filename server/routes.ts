@@ -2,10 +2,11 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import multer from "multer";
 import { storage } from "./storage";
-import { matchRequestSchema } from "@shared/schema";
+import { matchRequestSchema, apiSettingsSchema } from "@shared/schema";
 import { PDFExtractor } from "./services/pdf-extractor";
 import { OpenRouterClient } from "./services/openrouter-client";
 import { TextSimilarityAnalyzer } from "./services/text-similarity";
+import { AIProvider } from "./services/ai-provider";
 import { z } from "zod";
 
 const upload = multer({ 
@@ -45,29 +46,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Analyze resume match
+  // Analyze resume match with configurable AI provider
   app.post("/api/match", async (req, res) => {
     try {
-      const { jobDescription, resumeText } = matchRequestSchema.parse(req.body);
+      const { jobDescription, resumeText, apiSettings } = req.body;
+      const validatedRequest = matchRequestSchema.parse({ jobDescription, resumeText });
 
       let analysisResult;
       let isAiGenerated = true;
 
       try {
-        // Try OpenRouter API first
-        const openRouterClient = new OpenRouterClient();
-        analysisResult = await openRouterClient.analyzeMatch(jobDescription, resumeText);
+        if (apiSettings) {
+          // Use user-configured AI provider
+          const validatedSettings = apiSettingsSchema.parse(apiSettings);
+          const aiProvider = new AIProvider(validatedSettings);
+          analysisResult = await aiProvider.analyzeMatch(validatedRequest.jobDescription, validatedRequest.resumeText);
+        } else {
+          // Fallback to default OpenRouter
+          const openRouterClient = new OpenRouterClient();
+          analysisResult = await openRouterClient.analyzeMatch(validatedRequest.jobDescription, validatedRequest.resumeText);
+        }
       } catch (error) {
-        console.warn("OpenRouter API failed, falling back to text similarity:", error);
+        console.warn("AI provider failed, falling back to text similarity:", error);
         // Fallback to text similarity
-        analysisResult = TextSimilarityAnalyzer.analyzeMatch(jobDescription, resumeText);
+        analysisResult = TextSimilarityAnalyzer.analyzeMatch(validatedRequest.jobDescription, validatedRequest.resumeText);
         isAiGenerated = false;
       }
 
       // Store the analysis
       const analysis = await storage.createMatchAnalysis({
-        jobDescription,
-        resumeText,
+        jobDescription: validatedRequest.jobDescription,
+        resumeText: validatedRequest.resumeText,
         matchScore: analysisResult.matchScore,
         skillMatch: analysisResult.skillMatch,
         experienceMatch: analysisResult.experienceMatch,
@@ -118,6 +127,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Get analysis error:", error);
       res.status(500).json({ 
         message: "Failed to retrieve analysis" 
+      });
+    }
+  });
+
+  // Get all analyses (history)
+  app.get("/api/history", async (req, res) => {
+    try {
+      const analyses = await storage.getAllMatchAnalyses();
+      res.json(analyses);
+    } catch (error) {
+      console.error("Get history error:", error);
+      res.status(500).json({ 
+        message: "Failed to retrieve analysis history" 
       });
     }
   });
