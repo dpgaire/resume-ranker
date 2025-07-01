@@ -17,18 +17,22 @@ import { z } from "zod";
 const upload = multer({ 
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
-  fileFilter: (req: any, file: any, cb: any) => {
-    if (file.mimetype === 'application/pdf') {
-      cb(null, true);
-    } else {
-      cb(new Error('Only PDF files are allowed'));
-    }
+  fileFilter: (req, file, cb) => {
+  if (file.mimetype.includes('pdf')) {
+    cb(null, true);
+  } else {
+    cb(new Error('Only PDF files are allowed'));
   }
+}
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Extract text from PDF
   app.post("/api/extract-pdf", upload.single('resume'), async (req: RequestWithFile, res) => {
+    // console.log('req.file',req.file)
+     console.log("Mimetype:", req.file?.mimetype);
+  console.log("File received:", !!req.file);
+  console.log("Filename:", req.file?.originalname);
     try {
       if (!req.file) {
         return res.status(400).json({ message: "No PDF file uploaded" });

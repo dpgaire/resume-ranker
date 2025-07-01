@@ -37,6 +37,7 @@ export function FileUpload({ onFileSelect, onFileRemove, selectedFile, isProcess
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    console.log('file',file)
     if (file && file.type === 'application/pdf' && file.size <= 10 * 1024 * 1024) {
       onFileSelect(file);
     }
@@ -51,8 +52,8 @@ export function FileUpload({ onFileSelect, onFileRemove, selectedFile, isProcess
   };
 
   return (
-    <div className="gradient-border">
-      <div className="gradient-border-inner p-6">
+    <div className="gradient-border h-full">
+      <div className="gradient-border-inner p-6 h-full">
         <div className="space-y-4">
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 bg-secondary-500 rounded-lg flex items-center justify-center">

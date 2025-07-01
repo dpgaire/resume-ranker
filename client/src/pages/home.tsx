@@ -55,6 +55,7 @@ export default function Home() {
       const formData = new FormData();
       formData.append('resume', file);
       const response = await apiRequest('POST', '/api/extract-pdf', formData);
+      console.log('response',response)
       return response.json();
     },
     onSuccess: (data) => {
@@ -106,6 +107,7 @@ export default function Home() {
   });
 
   const handleFileSelect = (file: File) => {
+    console.log('file herere',file)
     setSelectedFile(file);
     extractPdfMutation.mutate(file);
   };
@@ -239,7 +241,7 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent">
+            <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-blue-600">
               Perfect Resume Match
             </h2>
             <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
@@ -308,32 +310,45 @@ Example: We are looking for a Senior Software Engineer with experience in React,
 
               {/* Match Button */}
               <motion.div
-                className="text-center"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.3 }}
-              >
-                <Button
-                  onClick={handleMatch}
-                  disabled={isProcessing || !jobDescription.trim() || !extractedText}
-                  className="px-12 py-4 bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-600 text-white font-semibold rounded-2xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 text-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-                  size="lg"
-                >
-                  <motion.div
-                    className="flex items-center space-x-3"
-                    animate={!isProcessing ? { scale: [1, 1.05, 1] } : {}}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  >
-                    <Sparkles className="w-5 h-5" />
-                    <span>{isProcessing ? "Processing..." : "Match Resume"}</span>
-                    <ArrowRight className="w-5 h-5" />
-                  </motion.div>
-                </Button>
-                
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-3">
-                  Analysis typically takes 10-15 seconds
-                </p>
-              </motion.div>
+  className="text-center"
+  initial={{ opacity: 0, y: 20 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.5, delay: 0.3 }}
+>
+  <Button
+    onClick={handleMatch}
+    disabled={isProcessing || !jobDescription.trim() || !extractedText}
+    className={`px-12 py-4 bg-gradient-to-r from-primary-500 to-secondary-500 
+      hover:from-primary-600 hover:to-secondary-600 
+      text-black dark:text-white 
+      font-semibold rounded-2xl shadow-xl 
+      hover:shadow-2xl transform hover:scale-105 
+      transition-all duration-300 text-lg 
+      disabled:opacity-50 disabled:cursor-not-allowed 
+      disabled:hover:scale-100 
+      dark:shadow-[0_4px_20px_rgba(255,255,255,0.1)]
+      dark:hover:shadow-[0_4px_30px_rgba(255,255,255,0.15)]
+    `}
+    size="lg"
+  >
+    <motion.div
+      className="flex items-center space-x-3"
+      animate={!isProcessing ? { scale: [1, 1.05, 1] } : {}}
+      transition={{ duration: 2, repeat: Infinity }}
+    >
+      <Sparkles className="w-5 h-5 text-yellow-500 dark:text-yellow-300" />
+      <span>
+        {isProcessing ? "Processing..." : "Match Resume"}
+      </span>
+      <ArrowRight className="w-5 h-5 text-blue-500 dark:text-blue-300" />
+    </motion.div>
+  </Button>
+
+  <p className="text-sm text-gray-600 dark:text-gray-400 mt-3">
+    Analysis typically takes 10-15 seconds
+  </p>
+</motion.div>
+
 
               {/* Loading State */}
               {isProcessing && (
@@ -444,5 +459,7 @@ Example: We are looking for a Senior Software Engineer with experience in React,
         onViewAnalysis={handleViewHistoryAnalysis}
       />
     </div>
+
+
   );
 }
