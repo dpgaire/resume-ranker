@@ -1,6 +1,11 @@
-import type { Express } from "express";
+import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import multer from "multer";
+
+// Extend Request interface to include file
+interface RequestWithFile extends Request {
+  file?: Express.Multer.File;
+}
 import { storage } from "./storage";
 import { matchRequestSchema, apiSettingsSchema } from "@shared/schema";
 import { PDFExtractor } from "./services/pdf-extractor";
@@ -12,7 +17,7 @@ import { z } from "zod";
 const upload = multer({ 
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
-  fileFilter: (req, file, cb) => {
+  fileFilter: (req: any, file: any, cb: any) => {
     if (file.mimetype === 'application/pdf') {
       cb(null, true);
     } else {
@@ -23,7 +28,7 @@ const upload = multer({
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Extract text from PDF
-  app.post("/api/extract-pdf", upload.single('resume'), async (req, res) => {
+  app.post("/api/extract-pdf", upload.single('resume'), async (req: RequestWithFile, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ message: "No PDF file uploaded" });
